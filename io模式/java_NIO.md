@@ -7,3 +7,32 @@
   - 非阻塞io模型：用户线程发出io请求后不断询问内核数据是否准备好，不会阻塞，如果数据没有准备好，用户线程实际上也可以再次请求，但是由于用户线程一直在询问，所以不会交出cpu
   - 多路复用io模型
     - java的nio其实就是多路复用io模型，由一个线程记录io流的状态来管理多个io
+    
+## 句柄和文件描述符
+  - 句柄一般存在与windows系统中，文件描述符存在与linux和unix中
+  - 文件句柄可以看作是连接用户和内核文件对象之间的桥梁
+  - 文件描述符和文件句柄在windows下其实是同一个东西
+  - 句柄和文件描述符的本质不同，下面解释
+  - 文件描述符
+    - 非负整数 (但是在系统内部其实并不是int类型)，返回的是一个索引，每个进程维护一个文件描述符表
+    - 文件描述符指向系统级的一个文件打开表中被打开的文件，这里的文件是一个名为FILE的结构体，文件句柄就是这个FILE结构体中的每一条属性
+    - FILE本身的作用也是用于定位文件的
+    
+    ```c
+    typedef struct {
+      short level;
+      unsigned flags;
+      char fd;  // 文件描述符
+      unsigned char hold;
+      short bsize;
+      unsigned char *buffer;
+      unsigned ar *curp;
+      unsigned istemp;
+      short token;
+    }FILE;
+    ```
+    
+    - 文件句柄中保存了文件对象的i-node引用，i-node保存了文件的各种属性
+    
+    ![file_table](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/resources/fd-handle-inode.png)
+  
