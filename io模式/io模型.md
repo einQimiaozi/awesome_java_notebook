@@ -9,6 +9,7 @@
   - select 有三个文件描述符集，分别是可读文件描述符集（readfds）、可写文件描述符集（writefds）和异常文件描述符集（exceptfds）
   - 应用程序可将某个 socket （文件描述符）设置到感兴趣的文件描述符集中，并调用 select 等待所感兴趣的事件发生
   - 应用进程会将多个 socket 设置到感兴趣的文件描述符集中，并调用 select 等待所关注的事件（比如可读、可写）处于就绪状态。当某些 socket 处于就绪状态后，select 返回处于就绪状态的 sockct 数量。注意这里返回的是 socket 的数量，并不是具体的 socket。应用程序需要自己去确定哪些 socket 处于就绪状态了，确定之后即可进行后续操作
+  - 注意，多路复用的优点并不是处理单个连接能够更快，而是能够处理更多的连接
 ## 信号驱动io模型
   ![xinhaoqudong](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/resources/xinhaoqudongio.jpg)
   - 应用进程告诉内核，如果某个 socket 的某个事件发生时，请向我发一个信号。在收到信号后，信号对应的处理函数会进行后续处理
