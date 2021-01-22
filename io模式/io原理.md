@@ -36,6 +36,12 @@
   - 可以访问所有空间
   - 不允许页面中断
   - x86的cpu下内核空间的寻址范围为0xffff880.....到最大地址，共1g
+  
+## 5种io模型
+  - 阻塞io模型：字面意思
+  - 非阻塞io模型：用户线程发出io请求后不断询问内核数据是否准备好，不会阻塞，如果数据没有准备好，用户线程实际上也可以再次请求，但是由于用户线程一直在询问，所以不会交出cpu
+  - 多路复用io模型
+    - java的nio其实就是多路复用io模型，由一个线程记录io流的状态来管理多个io
 
 ## io中断原理
   - 用户进程向cpu发起read系统调用，读取数据
@@ -60,27 +66,6 @@
   - 同步io由用户发出，内核或用户线程不断询问数据就绪，就绪后将数据从内核拷贝到用户线程，完成拷贝之前会处于阻塞状态
   - 异步io全过程由内核操作，只有发出io请求这一步由用户发出，所以不会产生线程阻塞
   
-## 零拷贝方法
-  - 零拷贝旨在减少用户态io，减少数据拷贝次数
-  - 实现方法一般分7种
-    - 用户直接io：该方法依然需要切换用户态和内核态，由用户进程直接和硬件做数据交换，只适用于自缓存机制应用，如数据库，缺点是由于cpu和磁盘的io速度差距大，会造成资源浪费，可以使用异步io解决
-    - mmap + write：使用mmap将内核缓冲区的地址映射到用户缓冲区，减少了数据从内核缓冲区到用户缓冲区的拷贝，流程如下
-      - 用户进程通过 mmap() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
-      - 将用户进程的内核空间的读缓冲区（read buffer）与用户空间的缓存区（user buffer）进行内存地址映射。
-      - CPU利用DMA控制器将数据从主存或硬盘拷贝到内核空间（kernel space）的读缓冲区（read buffer）。
-      - 上下文从内核态（kernel space）切换回用户态（user space），mmap 系统调用执行返回。
-      - 用户进程通过 write() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
-      - CPU将读缓冲区（read buffer）中的数据拷贝到的网络缓冲区（socket buffer）。
-      - CPU利用DMA控制器将数据从网络缓冲区（socket buffer）拷贝到网卡进行数据传输。
-      - 上下文从内核态（kernel space）切换回用户态（user space），write 系统调用执行返回。
-
-
-## 5种io模型
-  - 阻塞io模型：字面意思
-  - 非阻塞io模型：用户线程发出io请求后不断询问内核数据是否准备好，不会阻塞，如果数据没有准备好，用户线程实际上也可以再次请求，但是由于用户线程一直在询问，所以不会交出cpu
-  - 多路复用io模型
-    - java的nio其实就是多路复用io模型，由一个线程记录io流的状态来管理多个io
-    
 ## 句柄和文件描述符
   - 句柄一般存在与windows系统中，文件描述符存在与linux和unix中
   - 文件句柄可以看作是连接用户和内核文件对象之间的桥梁
@@ -113,3 +98,44 @@
     
     - open:文件描述符的操作，返回的是一个int类型的文件描述符
     - fopen：返回一个文件指针，只想的事FILE结构体，可以看作是带有io缓存的open封装
+
+  
+## 零拷贝方法
+  - 零拷贝旨在减少用户态io，减少数据拷贝次数
+  - 实现方法一般分7种
+    - 用户直接io：该方法依然需要切换用户态和内核态，由用户进程直接和硬件做数据交换，只适用于自缓存机制应用，如数据库，缺点是由于cpu和磁盘的io速度差距大，会造成资源浪费，可以使用异步io解决
+    - mmap + write：使用mmap将内核缓冲区的地址映射到用户缓冲区，减少了数据从内核读缓冲区到用户读缓冲区的拷贝，但是write的时候依然要拷贝，流程如下
+      - 用户进程通过 mmap() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
+      - 将用户进程的内核空间的读缓冲区（read buffer）与用户空间的缓存区（user buffer）进行内存地址映射。
+      - CPU利用DMA控制器将数据从主存或硬盘拷贝到内核空间（kernel space）的读缓冲区（read buffer）。
+      - 上下文从内核态（kernel space）切换回用户态（user space），mmap 系统调用执行返回。
+      - 用户进程通过 write() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
+      - CPU将读缓冲区（read buffer）中的数据拷贝到的网络缓冲区（socket buffer）。
+      - CPU利用DMA控制器将数据从网络缓冲区（socket buffer）拷贝到网卡进行数据传输。
+      - 上下文从内核态（kernel space）切换回用户态（user space），write 系统调用执行返回。
+      - 缺陷：文件较小时，mmap会产生内存碎片。当 mmap 一个文件时，如果这个文件被另一个进程所截获，那么 write 系统调用会因为访问非法地址被 SIGBUS 信号终止，SIGBUS 默认会杀死进程并产生一个 coredump，服务器可能因此被终止。
+    - sendfile：该方法在linux2.1中被引入，该方法简单来说就是数据不再经过用户缓冲区，所有数据传输在内核缓冲区中完成，流程如下：
+      - 用户进程通过 sendfile() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
+      - CPU 利用 DMA 控制器将数据从主存或硬盘拷贝到内核空间（kernel space）的读缓冲区（read buffer）。
+      - CPU 将读缓冲区（read buffer）中的数据拷贝到的网络缓冲区（socket buffer）。
+      - CPU 利用 DMA 控制器将数据从网络缓冲区（socket buffer）拷贝到网卡进行数据传输。
+      - 上下文从内核态（kernel space）切换回用户态（user space），sendfile 系统调用执行返回。
+      - 缺陷：整个过程对用户进程不可见，所以用户进程无法修改数据，只能做单纯的传输
+    - sendfile + DMA gather copy：该方法简单来说就是利用数据描述信息使硬件设备缓冲区能够批量的将数据从内核缓冲区中拷贝过来，和单纯sendfile相比减少了一次cpu拷贝，流程如下
+      - 用户进程通过 sendfile() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
+      - CPU 利用 DMA 控制器将数据从主存或硬盘拷贝到内核空间（kernel space）的读缓冲区（read buffer）。
+      - CPU 把读缓冲区（read buffer）的文件描述符（file descriptor）和数据长度拷贝到网络缓冲区（socket buffer）。
+      - 基于已拷贝的文件描述符（file descriptor）和数据长度，CPU 利用 DMA 控制器的 gather/scatter 操作直接批量地将数据从内核的读缓冲区（read buffer）拷贝到网卡进行数据传输。
+      - 上下文从内核态（kernel space）切换回用户态（user space），sendfile 系统调用执行返回。
+      - 缺陷：同样由于全过程在内核缓冲区中完成，所以用户进程不能修改数据，并且本身需要硬件支持，它只适用于将数据从文件拷贝到 socket 套接字上的传输过程。
+    - splice：该方法在linux2.6.17版本中引入，在内核缓冲区和设备缓冲区之间建立一个pipeline，避免两者之间的cpu拷贝，流程如下
+      - 用户进程通过 splice() 函数向内核（kernel）发起系统调用，上下文从用户态（user space）切换为内核态（kernel space）。
+      - CPU 利用 DMA 控制器将数据从主存或硬盘拷贝到内核空间（kernel space）的读缓冲区（read buffer）。
+      - CPU 在内核空间的读缓冲区（read buffer）和网络缓冲区（socket buffer）之间建立管道（pipeline）。
+      - CPU 利用 DMA 控制器将数据从网络缓冲区（socket buffer）拷贝到网卡进行数据传输。
+      - 上下文从内核态（kernel space）切换回用户态（user space），splice 系统调用执行返回。
+      - 缺陷：用户进程不能修改数据，两个需要传输数据的文件描述符之间必须有一个管道参数
+    - 写时复制：由于内核空间的虚拟内存是共享的，所以多个进程在访问区域时，如果不执行write操作就不需要拷贝，只有write时才拷贝一份副本到用用户缓冲区
+    - 缓冲区共享：该方法目前还不成熟，需要应用程序、网络软件以及设备驱动程序之间的紧密合作，基本思想是每个进程维护自己的一个缓冲区，并且映射到内核和用户缓冲区，这样避免了io操作
+  - 零拷贝方法对比
+  ![zerocopy](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/resources/zerocopy.jpg)
