@@ -1,23 +1,51 @@
-继承自 AbstractSequentialList(一套基于顺序list访问的接口)，子类仅需实现部分代码即可拥有完整的一套访问某种序列表（比如链表）的接口, 而AbstractSequentialList 提供的方法基本上都是通过 ListIterator 实现的，比如：
+## 结构
 
-```java
-public E get(int index) {
-    try {
-        return listIterator(index).next();
-    } catch (NoSuchElementException exc) {
-        throw new IndexOutOfBoundsException("Index: "+index);
-    }
-}
+LinkedList底层使用双向链表结构实现
 
-public void add(int index, E element) {
-    try {
-        listIterator(index).add(element);
-    } catch (NoSuchElementException exc) {
-        throw new IndexOutOfBoundsException("Index: "+index);
-    }
-}
+不需要扩容，但是节点内需要多存储前驱和后继节点的指针
 
-// 留给子类实现
-public abstract ListIterator<E> listIterator(int index);
-```
-  
+## 查找(node方法)
+
+由于listLinked无法随机访问，所以查找特定下标的时候使用node(int index)方法
+
+该方法就是普通的顺序访问链表找到index处的节点
+
+为了能让性能更好，在访问前会根据index的大小判断index在表中的位置是靠前还是靠后，利用双向链表的特性选择从前还是从后查找
+
+## add操作
+
+首先Linklist的批量添加和单个元素添加的过程不同，但是都会出发modCount++(最后才自增)
+
+### 单个元素添加
+
+1.检查索引(如果在头尾的话直接插入即可，并且复杂度只有O(1)，其他位置为O(n))
+
+2.使用node方法查找index的的后继节点(node返回的并不是前驱，需要注意！！！)
+
+### 批量添加(参数为Collection类型)
+
+1.检查索引
+
+2.使用toArray方法将Collection类型转换为数组
+
+3.使用node方法查找数组的起始index的位置的后继节点
+
+4.遍历数组，创建节点，依次添加
+
+## 删除
+
+1.检查index，如果是头尾则直接删除
+
+2.使用node方法查找index的的后继节点后删除
+
+## toArray
+
+新建一个object数组，遍历Collection并存入数组后返回数组即可
+
+## 总结
+
+依然线程不安全
+
+底层双向链表实现
+
+增删效率高
