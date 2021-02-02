@@ -79,8 +79,8 @@ jvm中的垃圾收集算法基本都基于分代收集，分代收集用白话�
 
 4.记忆表和卡表：
 
-   - 1.记忆表：记录从非回收区指向回收区的指针的集合，用于高效解决跨代引用问题
-   - 2.卡表：记忆表的卡精度实现，最小单位是一块内存区域
+   - 1.记忆表：记录从非回收区指向回收区的指针的集合，用于高效解决跨代引用问题，只是一种概念，一般靠卡表实现
+   - 2.卡表：记忆表的卡精度实现，最小单位是一块内存区域，一般大小为512字节
    - 3.一般卡页内有跨代指针，则对应的卡表就变脏(标志位置为1)
    
 5.写屏障：
@@ -129,5 +129,78 @@ jvm中的垃圾收集算法基本都基于分代收集，分代收集用白话�
       - 同样由于并发清除要占用内存，所以要留一部分内存给程序运行，于是CMS不能像其他收集器一样等待老年代内存满了再收集
       - 会产生空间碎片，需要设置参数决定CMS回收n次后，在n+1次时执行空间碎片整理，但是这个过程是STW的，所以需要停顿
       
-7.G1收集器：面向服务端应用的垃圾收集器，并行
+CMS的 GC模式
+
+
+      
+7.G1收集器：面向服务端应用的垃圾收集器，并行，基于标记-复制算法，和CMS一样拥有四个步骤
+
+![G1](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/20200628093617249.png)
+
+G1将内存区域分为三种颜色的n块区域，每个区域的大小范围在1-32M之间，应为2的n次幂
+
+对于超过单块区域容量大小的对象专门被放在N个连续内存的humongous块中，作为老年代的一部分
+
+老年代和新生代不再是位置固定，而是分散在不连续的内存中，区域作为最小回收单元
+
+回收策略通过判断每个区域的回收价值进行排序筛选
+
+停顿时间可由用户设置，可预测
+
+回收算法：
+   - 1.初始标记(STW)：同CMS
+   - 2.并发标记：同CMS
+   - 3.最终标记(STW)：同CMS
+   - 4.清理(STW)：对各个Region的回收价值和成本进行排序，根据用户所期望的GC停顿时间来制定回收计划。这个阶段也可以做到与用户程序一起并发执行，但是因为只回收一部分Region，时间是用户可控制的，而且停顿用户线程将大幅提高收集效率。整个清理过程使用的是复制算法
+   
+对于打算从CMS或者ParallelOld收集器迁移过来的应用，按照官方 的建议，如果发现符合如下特征，可以考虑更换成G1收集器以追求更佳性能：
+
+   - 实时数据占用了超过半数的堆空间
+   - 对象分配率或“晋升”的速度变化明显
+   - 期望消除耗时较长的GC或停顿（超过0.5——1秒）
+   
+1.Young GC
+
+！[Young](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/YoungGc.jpg)
+
+Young GC 回收的是所有年轻代的Region。当E区不能再分配新的对象时就会触发。E区的对象会移动到S区，当S区空间不够的时候，E区的对象会直接晋升到O区，同时S区的数据移动到新的S区，如果S区的部分对象到达一定年龄，会晋升到O区。
+
+2.Mixed GC
+
+![Mixed](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/MixedGc.jpg)
+
+回收所有的年轻代的Region+部分老年代的Region。
+
+使用参数来控制老年代占整个堆的占比，超过这个值就回收
+
+至于为什么是部分老年代，是为了保证停顿时间，通过参数设置停顿时间，如果可能超过这个时间就对当前老年代进行价值排序，优先回收价值高并不超时的部分
+
+3.Full GC
+
+G1的垃圾回收过程是和应用程序并发执行的，当Mixed GC的速度赶不上应用程序申请内存的速度的时候，Mixed G1就会降级到Full GC，收集整个堆
+
+Full GC使用的是Serial GC。Full GC会导致长时间的STW，Major GC通常是跟full GC是等价的
+
+## 关于GC模式的补充整理
+
+Partial GC：并不收集整个GC堆的模式
+
+Young GC：只收集young gen的GC
+
+Old GC：只收集old gen的GC。只有CMS的concurrent collection是这个模式
+
+Mixed GC：收集整个young gen以及部分old gen的GC。只有G1有这个模式
+
+Full GC：收集整个堆，包括young gen、old gen、perm gen（如果存在的话）等所有部分的模式。
+
+1.Serial GC算法：Serial Young GC ＋ Serial Old GC (敲黑板！敲黑板！敲黑板！实际上它是全局范围的Full GC)
+
+2.Parallel GC算法：Parallel Young GC ＋ 非并行的PS MarkSweep GC / 并行的Parallel Old GC（敲黑板！敲黑板！敲黑板！这俩实际上也是全局范围的Full GC），选PS MarkSweep GC 还是 Parallel Old GC 由参数UseParallelOldGC来控制
+
+3.CMS算法：ParNew（Young）GC + CMS（Old）GC ＋ Full GC for CMS算法
+
+4.G1 GC：Young GC + mixed GC（新生代，再加上部分老生代）＋ Full GC for G1 GC算法
+
+
+
       
