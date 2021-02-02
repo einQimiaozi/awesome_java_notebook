@@ -205,6 +205,8 @@ Full GC：收集整个堆，包括young gen、old gen、perm gen（如果存在�
 
 ## GC触发条件
 
+！[GC](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/GC.png)
+
 1.Young GC：Eden区满了就触发
 
 2.full GC：
