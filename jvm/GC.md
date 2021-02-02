@@ -185,9 +185,11 @@ Full GC使用的是Serial GC。Full GC会导致长时间的STW，Major GC通常�
 
 Partial GC：并不收集整个GC堆的模式
 
-Young GC：只收集young gen的GC
+Young GC：只收集young gen的GC，也叫MinorGC
 
 Old GC：只收集old gen的GC。只有CMS的concurrent collection是这个模式
+
+Major GC：有时候指full Gc，有时候指Old GC
 
 Mixed GC：收集整个young gen以及部分old gen的GC。只有G1有这个模式
 
@@ -201,6 +203,19 @@ Full GC：收集整个堆，包括young gen、old gen、perm gen（如果存在�
 
 4.G1 GC：Young GC + mixed GC（新生代，再加上部分老生代）＋ Full GC for G1 GC算法
 
+## GC触发条件
+
+1.Young GC：Eden区满了就触发
+
+2.full GC：
+   - 触发young gc前如果发现老年代区的剩余空间比之前的young gc的平均晋升大小要小，则直接触发full gc
+   - system.gc()
+   - 如果有永久代的话，永久代空间没了也触发
+   - 在parallel scavenge中触发full是要先触发一次young gc而不是在触发young gc之前
+
+## 老年代晋升条件
+
+jvm给每个对象定义了一个年龄，Eden中的对象每熬过一次young gc年龄就+1,默认到15岁就晋升，可以通过参数设置
 
 
       
