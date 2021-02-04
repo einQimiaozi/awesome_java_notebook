@@ -56,7 +56,7 @@ rdlist：维护一个指向变化过的socket的引用列表
 
 如果rdlist为空(没有socket接收被触发)，则epoll_wait就让进程处于阻塞状态
 
-当socket收到数据后，首先将变化的socket加入rdlist中(通过Epitem对象间接引用)，后续从等待列表中的删除和阻塞唤醒都根据rdlist中的引用完成
+当socket收到数据后，首先将变化的socket加入rdlist中(通过Epitem对象间接引用)，后续从socket的等待列表中进行进程的删除和阻塞唤醒操作都根据rdlist中指向的socket来完成，这样避免了select中想要找到哪些socket有当前需要操作的进程就必须遍历的问题，因为只有变化过的socket才有可能需要对其等待列表中的进程进行才做
 
 epoll中全部的操作都是依靠中断当前进程后操作eventpoll完成的
 
@@ -67,6 +67,3 @@ rdlist负责所有socket添加和删除的索引定位操作，内部使用双�
 是否阻塞通过判断rdlist是否为空决定，不为空的话返回rdlist索引定位到的socket
 
 注意，rdlist和等待队列一个负责socket一个负责进程
-
-
-
