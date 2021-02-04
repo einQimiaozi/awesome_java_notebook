@@ -30,7 +30,7 @@ select使用了socket队列，将socket放入一个socket队列中，进程通�
 
 整个流程如下
 
-![https://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/resources/select.jpg]
+![select](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/resources/select.jpg)
 
 缺点：如上图所示，加入等待队列和从等待队列里唤醒都需要遍历整个socket队列，select对socket队列长度的最大值规定为1024,即便如此时间复杂度依然很高
 
@@ -38,7 +38,7 @@ select使用了socket队列，将socket放入一个socket队列中，进程通�
 
 epoll用于解决select效率低下的问题，采用了将维护等待队列和阻塞进程分开处理的方法
 
-![epoll](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/select%E5%92%8Cepoll.md)
+![epoll](hhttps://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/resources/epoll.jpg)
 
 epoll对socket和进程的管理使用中介eventpoll完成，不让socket和进程之间相互直接操作
 
