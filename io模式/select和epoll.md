@@ -38,7 +38,7 @@ select使用了socket队列，将socket放入一个socket队列中，进程通�
 
 epoll用于解决select效率低下的问题，采用了将维护等待队列和阻塞进程分开处理的方法
 
-![epoll](hhttps://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/resources/epoll.jpg)
+![epoll](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/resources/epoll.jpg)
 
 epoll对socket和进程的管理使用中介eventpoll完成，不让socket和进程之间相互直接操作
 
