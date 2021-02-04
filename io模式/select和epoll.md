@@ -34,3 +34,39 @@ select使用了socket队列，将socket放入一个socket队列中，进程通�
 
 缺点：如上图所示，加入等待队列和从等待队列里唤醒都需要遍历整个socket队列，select对socket队列长度的最大值规定为1024,即便如此时间复杂度依然很高
 
+## epoll
+
+epoll用于解决select效率低下的问题，采用了将维护等待队列和阻塞进程分开处理的方法
+
+![epoll](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/io%E6%A8%A1%E5%BC%8F/select%E5%92%8Cepoll.md)
+
+epoll对socket和进程的管理使用中介eventpoll完成，不让socket和进程之间相互直接操作
+
+eventpoll中比较重要的部分就是epoll_ctl，epoll_wait和rdlist
+
+epoll_ctl：用户维护等待队列
+
+epoll_wait:用于唤醒和阻塞进程
+
+rdlist：维护一个指向变化过的socket的引用列表
+
+整个流程如下：
+
+首先在初始化阶段将进程添加到希望监听的socket列表里，这部分和select一样，只不过通过eventpoll对象操作，同时维护一个rdlist
+
+如果rdlist为空(没有socket接收被触发)，则epoll_wait就让进程处于阻塞状态
+
+当socket收到数据后，首先将变化的socket加入rdlist中(通过Epitem对象间接引用)，后续从等待列表中的删除和阻塞唤醒都根据rdlist中的引用完成
+
+epoll中全部的操作都是依靠中断当前进程后操作eventpoll完成的
+
+rdlist负责所有socket添加和删除的索引定位操作，内部使用双向链表实现
+
+而存放socket引用的结构则是由红黑树完成
+
+是否阻塞通过判断rdlist是否为空决定，不为空的话返回rdlist索引定位到的socket
+
+注意，rdlist和等待队列一个负责socket一个负责进程
+
+
+
