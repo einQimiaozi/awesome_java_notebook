@@ -159,7 +159,7 @@ G1将内存区域分为三种颜色的n块区域，每个区域的大小范围�
    
 1.Young GC
 
-！[Young](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/YoungGc.jpg)
+![Young](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/YoungGc.jpg)
 
 Young GC 回收的是所有年轻代的Region。当E区不能再分配新的对象时就会触发。E区的对象会移动到S区，当S区空间不够的时候，E区的对象会直接晋升到O区，同时S区的数据移动到新的S区，如果S区的部分对象到达一定年龄，会晋升到O区。
 
@@ -203,7 +203,7 @@ Full GC：收集整个堆，包括young gen、old gen、perm gen（如果存在�
 
 ## GC触发条件
 
-！[GC](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/GC.png)
+![GC](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/GC.png)
 
 1.Young GC：Eden区满了就触发
 
