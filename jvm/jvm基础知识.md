@@ -7,3 +7,15 @@ java方法和本地方法的区别：java方法是由由java语言编写，编�
 区别：jvm是java虚拟机，jre是java类库api中的javase子集+jvm，jdk是java语言+jvm+java类库
 
 所以jdk包含jre，jre包含jvm
+
+## jvm的总体结构
+
+jvm由四部分组成
+  - 类加载器
+  - 运行时数据区
+  - 执行引擎
+  - 垃圾收集
+  
+jvm的中不论在哪个部分都遵循栈管运行，堆管储存
+
+
