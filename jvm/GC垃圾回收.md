@@ -97,5 +97,11 @@
 | 回收器 | 新生代 | 老年代 | 并发 | 标记清除 | 标记复制 | 标记整理 | STW |
 | :----: | :----:  | :----: | :----: | :----: | :----:  | :----: | :----: |
 | Serial | O | X | X | X | O | X | O |
+| Serial Old | X | O | X | X | X | O | O |
+| ParNew | O | X | O | X | O | X | O |
+| Parallel Scavenge | O | X | O | X | O | X | O |
+| Parallel Old | X | O | O | X | X | O | O |
+| CMS | X | O | O | O | X | X | O |
+| G1 | O | O | O | X | O | X | O |
 
 
