@@ -195,6 +195,19 @@ G1比其他GC器都要特殊，它同时拥有老年代和新生代的GC，有�
 一篇关于jvm GC的问答文章：https://www.cnblogs.com/yescode/p/13961190.html
 
 
+# 空间担保
+
+1.空间担保指的是老年代进行空间分配担保，本质是通过对剩余空间的检查自动判断本次GC是Younbg GC还是Full GC
+
+2.在发生Young GC之前，虚拟机会检查老年代最大可用的连续空间是否大于新生代所有对象的总空间，如果小于，则虚拟机会查看HandlePromotionFailure设置值是否允许担保失败
+
+3.如果HandlePromotionFailure=true，那么会继续检查老年代最大可用连续空间是否大于历次晋升到老年代的对象的平均大小，如果大于，则尝试进行一次Young GC，但这次Young GC依然是有风险的
+
+4.如果小于或者HandlePromotionFailure=false，则改为进行一次Full GC
+
+## 下面这张图是包含了空间担保的GC时机和过程
+
+![GC](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/882980-20200102224333644-540904754.png)
 
 
 
