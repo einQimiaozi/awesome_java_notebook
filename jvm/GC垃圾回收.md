@@ -147,7 +147,8 @@ G1比其他GC器都要特殊，它同时拥有老年代和新生代的GC，有�
 1.G1的数据结构
   - G1不再将对象作为回收单位，而是使用region作为回收单位
   - 一个region是一块内存，region中保存了多个card，card指的就是卡表里那个card，由于card也是一块内存，所以一个card未必仅指一个对象
-  - region也被进行了分代，分为新生代和老年代，其中新生代又被分为Eden，Survivor(from)和Survivor(to)，以下简称e，sf和st，他们的比例为8:1:1
+  - region也被进行了分代，分为新生代和老年代，其中新生代又被分为Eden，Survivor(from)和Survivor(to)，以下简称e，sf和st，他们的比例为8:1:1，老年代除了老年代数据以外，还有Humongous，它用于存储大对象，即容量大于0.5个region的对象
+  - region的数量默认为2048个，单个region的大小取值范围为1-32mb
   
   ![G1](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/jvm/Resources/20200628093617249.png)
  
@@ -166,9 +167,13 @@ G1比其他GC器都要特殊，它同时拥有老年代和新生代的GC，有�
    - rset每次更新依靠的其实就是写屏障，即引用关系变化或跨代引用的时候会更新，这也是为什么rset能够解决跨代引用和引用关系破坏问题
    - 同一个region之间的引用可以不用rset记录，只有old->young和old->old的关系才需要使用rset记录
 
-3.G1的Young GC运行过程
-   - 1.触发条件：eden满了就触发GC
-   - 2.初始标记：STW，标记GC Roots能直接关联的对象，速度快
+4.TAMS
+   - TAMS两个指针，用于标记并发回收和并发清除前，region当前最后一个card所在的位置(这个被称top指针)
+   - 这样在并发过程中，如果产生新对象，G1要求新对象被分配在tams指向的位置之后，通过tams可以直接得到在并发中产生的新对象，在G1中，并发时产生的新对象被认为是需要存活的
+
+5.G1的Young GC运行过程
+   - 1.触发条件：eden快满了就触发GC，同时创建cset
+   - 2.初始标记：STW，将GC Roots能直接关联的对象放入cset，速度快
    - 3.并发标记：从GC Roots的直接关联对象开始并发遍历，not STW，速度慢
    - 4.重新标记：修正并发标记期间用户线程运行导致变化的对象关系，STW，速度快，仅仅对写屏障(原始快照)进行遍历就可以解决引用关系破坏和跨代引用问题
    - 5.最终标记：kill掉要挂掉的对象，速度快，not STW
