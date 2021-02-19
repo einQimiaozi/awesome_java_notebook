@@ -167,7 +167,7 @@ G1比其他GC器都要特殊，它同时拥有老年代和新生代的GC，有�
    - 具体做法是，对region进行价值排序，回收最大的那些region，至于回收的数量由用户制定一个-XX:MaxGCPauseMills参数，该参数为用户希望的停顿时间，根据衰减均值作为理论基础实现对回收步骤总时间的计算，以此推导出在不超过用户期望时间的情况下最多能回收的region个数
 
 3.rset，cset
-   - rset一组map结构的数据结构，k记录了一个region的起始地址，v记录了这个region中一个card在卡表中的位置，每个region会维护一个rset，本质上就是利用这个rset可以得到引用自己的其他region的地址和具体的内存位置，当要回收该分区时，通过扫描分区的RSet，来确定引用本分区内的对象是否存活，进而确定本分区内的对象存活情况，可以理解为记忆集的另一种实现(反向卡表)
+   - rset一组map结构的数据结构，k记录了一个region的起始地址，v记录了这个region中card在卡表中的位置的数组，如果两个card存在于相同的region那么他们的k相等，每个region会维护一个rset，本质上就是利用这个rset可以得到引用自己的其他region的地址和具体的内存位置，当要回收该分区时，通过扫描分区的RSet，来确定引用本分区内的对象是否存活，进而确定本分区内的对象存活情况，可以理解为记忆集的另一种实现(反向卡表)
    - cset用于记录要被回收的Region，每次stw的时候都会一次性将cset释放干净，由于rset的存在，所以每次跨代引用只需要扫描cset的region中的rset即可
    - rset每次更新依靠的其实就是写屏障，即引用关系变化或跨代引用的时候会更新，这也是为什么rset能够解决跨代引用和引用关系破坏问题
    - 同一个region之间的引用可以不用rset记录，只有old->young和old->old的关系才需要使用rset记录
@@ -184,7 +184,9 @@ G1比其他GC器都要特殊，它同时拥有老年代和新生代的GC，有�
    - 5.筛选标记：根据-XX：MaxGCPauseMills最大化收益，筛选出要回收的region(部分old GC)
 
 6.G1的full GC触发条件：一般当回收速度赶不上内存分配的速度的时候会出发full GC，会导致长时间的stw，cms触发full GC的条件也是如此，比如年轻代晋升老年代失败(G1)，比如由于内存碎片产生浮动垃圾导致Concurrent Mode Failure(cms)
-   
+ 
+ 
+一篇关于jvm GC的问答文章：https://www.cnblogs.com/yescode/p/13961190.html
 
 
 
