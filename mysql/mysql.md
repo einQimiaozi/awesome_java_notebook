@@ -67,4 +67,19 @@ sync_binlog同上
 
 7.提交事务，并commit redo log
 
+## mysql的数据类型
+
+1.整型
+  - 1.tinyint smalliont,meduimint,int
+  - 2.bigint(用于记录大数)
+
+2.浮点型
+  - 1.float(8字节) double(16字节) 
+  - 2.decimal(大数，用于存储货币单位)
+
+3.日期
+  - 1.date，time，year
+  - 2.timestamp(4字节，1970-2038年) datetime(8字节，一般比timestamp好用)
+
+
 
