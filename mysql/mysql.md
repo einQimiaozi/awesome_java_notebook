@@ -51,5 +51,20 @@ innode_flush_log_at_trx_commit参数控制redo log的commit频率，建议设置
 
 sync_binlog同上
 
+## sql语句的执行过程
+
+1.执行器对语句给出的条件进行查找
+
+2.innoDB查找当前数据页是否在内存中，如果在则返回页中的该行数据，不在就去磁盘里找，读入内存
+
+3.执行器执行事务
+
+4.innoDB将执行结果更新到内存
+
+5.将操作记录写入redo log，让其处于准备阶段
+
+6.将操作记录写入binlog
+
+7.提交事务，并commit redo log
 
 
