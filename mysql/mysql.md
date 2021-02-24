@@ -204,7 +204,9 @@ sync_binlog同上
 
 5.由于每次写入磁盘是在r的时候，所以r的越少写入磁盘的次数就越少，那么change buffer就很适合写多读少的场景了，尤其是机械硬盘，毕竟io慢，少io的话能提升不少速度
 
-6.和wal的区别：wal(也就是redo log)主要节省了写io的消耗，change buffer主要节省的是读io的消耗
+6.和wal的区别：wal(也就是redo log)主要节省了写io的消耗(写的次数少了)，change buffer主要节省的是读io的消耗(读的次数少了)
+
+7.change buffer如果遇到机器突然断电是不会丢失的，哪怕没有写入磁盘，因为change buffer本身的操作其实使用wal记录了(日志)，只需要重启后回归并merge就可以了
 
 ## 锁
 
