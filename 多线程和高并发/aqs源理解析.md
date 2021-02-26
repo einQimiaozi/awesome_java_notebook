@@ -65,6 +65,8 @@ public final void acquireSharedInterruptibly(int arg){}//共享方式
 
 注意，tryAcquire()和它对应的锁释放方法tryRelease()需要自己在继承的子类里实现(tryAcquireShared方法也是，好像try开头的方法都要自己实现)
 
+aqs的acquire等方法加锁的底层是通过Locksupport实现的，也就是unsafe，系统级实现，所以其实你看不到源码
+
 ## 具体流程
 
 1.线程a首先调用acquire方法，acquire方法调用tryAcquire方法尝试修改state
