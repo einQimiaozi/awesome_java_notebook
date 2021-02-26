@@ -34,7 +34,7 @@ CHL队列由链表实现，以自旋的方式获取资源，是可阻塞的先�
 
 1.独占模式：该模式只有一个线程能执行，如ReentrantLock
 
-2.共享模式：共享，多个线程可同时执行，如Semaphore/CountDownLatch
+2.共享模式：共享，多个线程可同时执行，如Semaphore/CountDownLatch，还有ReentrantLock在自己的线程重复拿锁的时候
 
 ## AQS的核心
 
@@ -63,6 +63,8 @@ public final void acquireInterruptibly(int arg){}//独占方式
 public final void acquireSharedInterruptibly(int arg){}//共享方式
 ```
 
+注意，tryAcquire()和它对应的锁释放方法tryRelease()需要自己在继承的子类里实现(tryAcquireShared方法也是，好像try开头的方法都要自己实现)
+
 ## 具体流程
 
 1.线程a首先调用acquire方法，acquire方法调用tryAcquire方法尝试修改state
@@ -74,3 +76,7 @@ public final void acquireSharedInterruptibly(int arg){}//共享方式
 4.如果执行线程时发现线程调用了new出来的条件变量的await方法，则将自己放入该条件变量的条件队列
 
 5.如果其他线程调用了signal或signalAll(这个方法不建议用，因为它会一次性唤醒该条件队列中所有的线程，会造成惊群)，那么该线程被转入同步队列，也就是说，一个线程只能处在条件队列or处在同步队列，二选一，不能影分身
+
+## 独占模式和共享模式的区别
+
+大部分流程都差不多，一个比较主要的区别就是独占模式下state只能是0or1,当state为1的时候其他线程都拿不到锁，而共享模式下state的值可以根据一个上限累加，未达到上限时就可以实现一个锁被多个线程获取，这也是为什么共享模式不需要条件队列，因为你一个线程就算阻塞也不影响其他线程去拿锁，所以阻塞就阻塞呗
