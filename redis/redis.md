@@ -90,6 +90,25 @@
 
 ![duoxiancheng](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/redis/Resources/duoxiancheng.jpg)
 
+## 持久化
+
+ 1.rdb(快照)
+  - 创建某个时间点上redis的副本到磁盘上，可以通过该副本复制出一个数据库副本
+ 
+ 2.aof(只追加文件)
+  - 该方法记录的是修改redis数据库的命令，文件位置和rdb放在一起
+  - 一般有三种设置方法 appendsync always:每次数据修改都写入(会降低redis的速度)  appendsync everysec:每秒写入一次，对redis性能影响不大 appendsync no:让系统决定何时同步，会增加数据丢失的风险，性能也不会提升多少，不建议使用
+  - redis4.0之后支持rdb和aof的混合持久化
+  - aof重写：该方法通过读取数据库中的键值对创建一个新的aof文件，读取过程中记录下服务器执行的所有命令并将其暂存在aof重写缓冲区中，创建新aof文件完毕后将缓冲区中的文件追加写入aof文件中，之后用新的aof替换掉旧的aof，完成aof文件重写的过程
+
+## 事务
+
+1.redis中的事务可以通过multi，exec，discard和watch等命令实现
+
+2.redis中的事务不保证原子性和持久性，不支持回滚
+
+
+
 
 
 
