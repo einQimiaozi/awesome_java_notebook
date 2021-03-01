@@ -46,4 +46,50 @@
 
 ![redis](https://github.com/Snailclimb/JavaGuide/blob/master/docs/database/Redis/images/redis-all/%E7%BC%93%E5%AD%98%E7%9A%84%E5%A4%84%E7%90%86%E6%B5%81%E7%A8%8B.png)
 
+## redis过期删除策略
+
+1.为什么要设置过期事件：因为内存有限
+
+2.如何判断数据过期：使用redis的过期字典(hashtable结构)，该字典的key是数据库中的某个key，value是该key的过期事件
+
+3.惰性删除：取key的时候对数据进行过期检查，cpu消耗小，容易产生大量过期数据
+
+4.定期删除：每隔一段时间按抽取一批key执行过期检查，并且redis底层会通过限制删除执行时长和频率来减少cpu消耗
+
+5.内存淘汰：redis支持8种内存淘汰，防止使用惰性删除和定期删除依然会漏删造成大量过期数据引发oom的问题，其中volatile是针对在过期字典中的数据，allkeys是针对整个键空间的
+  - 1.volatile：最近最少使用的淘汰
+  - 2.volatile-ttl:快过期的淘汰
+  - 3.allkeys-lru:最少使用的淘汰(这个是最常用的方法)
+  - 4.allkeys-random：任意淘汰数据，注意这个任意淘汰是不看过期时间的，也就是说哪怕你这个数据没有在过期字典里，也有可能被淘汰
+  - 5.no-eviction:当内存不足时新写入直接报错(这个方法基本没人用)
+  - 6.vloatile-lfu:淘汰最不经常使用的
+  - 7.allkeys-lfu:淘汰最不经常使用的
+
+## redis的单线程事件处理模型(文件事件处理器)
+
+1.通过io多路复用程序监听大量连接(多个socket)，并根据socket目前执行的任务来为socket关联不同的事件处理器
+
+2.当被监听的套接字准备好执行accpet read write close 等操作时会产生对应的文件事件，文件事件处理器调用对应事件处理器来处理
+
+3.文件事件处理器的结构
+
+![shujianchuliqi](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/redis/Resources/shijianchuliqi.jpg)
+  
+4.为什么不使用多线程
+  - 实际上redis6.0之后引入多线程了
+  - 使用单线程的原因有三个：1.单线程编程容易维护 2.redis的性能瓶颈不在cpu而在内存和网络 3.单线程不存在死锁，上下文切换的问题
+  - 6.0后引入多线程的理由：印度的多线程实际上应用在网络数据的读写上，执行命令仍然使用单线程，主要是为了解决多线程网络的io瓶颈问题
+  - 引入的多线程其实就是一堆io线程，并且io线程执行的时候，执行命令的主线程是阻塞的！！！
+
+5.多线程下的情况
+  - 1.使用一个等待列表记录socket
+  - 2.主线程获取可读socket，如果等待列表不满就加入等待列表，否则就将等待列表中的socket和多个io线程绑定，之后主线程阻塞
+  - 3.io线程读取socket并解析其请求
+  - 4.所有socket读取完毕后主线程在顺序执行请求命令并将数据写入缓冲区
+  - 5.socket的回写也是类似的执行，在回写和读都执行完毕后清空等待队列并返回主线程
+
+![duoxiancheng](https://github.com/einQimiaozi/awesome_java_notebook/blob/main/redis/Resources/duoxiancheng.jpg)
+
+
+
 
